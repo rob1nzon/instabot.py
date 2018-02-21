@@ -484,7 +484,7 @@ class InstaBot:
                              self.media_max_like == 0)):
                             for blacklisted_user_name, blacklisted_user_id in self.user_blacklist.items(
                             ):
-                                if self.media_by_location[i]['owner']['id'] == blacklisted_user_id:
+                                if str(self.media_by_location[i]['owner']['id']).find(blacklisted_user_id) > 0:
                                     self.write_log(
                                         "Not liking media owned by blacklisted user: "
                                         + blacklisted_user_name)
@@ -500,6 +500,7 @@ class InstaBot:
                                 if (len(self.media_by_location[i]['caption']) > 1):
                                     caption = self.media_by_location[i]['caption'].encode('ascii', errors='ignore')
                                     tag_blacklist = set(self.tag_blacklist)
+                                    print(caption)
                                     if sys.version_info[0] == 3:
                                         tags = {
                                             str.lower(
@@ -516,7 +517,7 @@ class InstaBot:
                                             if (tag.decode('ASCII')
                                                 ).startswith("#")
                                         }
-
+                                    print(list(tags))
                                     if tags.intersection(tag_blacklist):
                                         matching_tags = ', '.join(
                                             tags.intersection(tag_blacklist))
@@ -831,12 +832,14 @@ class InstaBot:
             ):
                 # ------------------- Get media_id -------------------
                 if len(self.media_by_tag) == 0:
+                    print('0')
                     self.get_media_id_by_tag(random.choice(self.tag_list))
                     self.this_tag_like_count = 0
                     self.max_tag_like_count = random.randint(
                         1, self.max_like_for_one_tag)
                     self.remove_already_liked()
                 if len(self.media_by_location) == 0:
+                    print('1')
                     self.get_media_id_by_location(random.choice(self.location_list))
                     self.this_tag_like_count = 0
                     self.max_tag_like_count = random.randint(
@@ -852,11 +855,11 @@ class InstaBot:
                 self.new_auto_mod_comments()
                 # Bot iteration in 1 sec
                 time.sleep(3)
-                # print("Tic!")
+                print("Tic!")
             else:
                 print("sleeping until {hour}:{min}".format(hour=self.start_at_h,
                                                            min=self.start_at_m), end="\r")
-                time.sleep(100)
+                time.sleep(10)
 
     def remove_already_liked(self):
         self.write_log("Removing already liked medias..")
@@ -881,8 +884,11 @@ class InstaBot:
         #             self.media_by_tag = [0]
         #     # Del first media_id
         #     del self.media_by_tag[0]
+        #print (len(self.media_by_location))
+        #print (time.time(), self.next_iteration["Like"])
         if time.time() > self.next_iteration["Like"] and self.like_per_day != 0 \
                 and len(self.media_by_location) > 0:
+            print('like')
             # You have media_id to like:
             if self.like_all_exist_media(media_size=1, delay=False):
                 # If like go to sleep:
@@ -906,8 +912,27 @@ class InstaBot:
                 self.next_iteration["Follow"] = time.time() + \
                                                 self.add_time(self.follow_delay/2)
                 return
-            log_string = "Trying to follow: %s" % (
+            log_string = "TAG Trying to follow: %s" % (
                 self.media_by_tag[0]['node']["owner"]["id"])
+            self.write_log(log_string)
+
+            if self.follow(self.media_by_tag[0]['node']["owner"]["id"]) != False:
+                self.bot_follow_list.append(
+                    [self.media_by_tag[0]['node']["owner"]["id"], time.time()])
+                self.next_iteration["Follow"] = time.time() + \
+                                                self.add_time(self.follow_delay)
+        if time.time() > self.next_iteration["Follow"] and \
+                        self.follow_per_day != 0 and len(self.media_by_location) > 0:
+            if self.media_by_location[0]["owner"]["id"] == self.user_id:
+                self.write_log("Keep calm - It's your own profile ;)")
+                return
+            if check_already_followed(self, user_id=self.media_by_location[0]["owner"]["id"]) == 1:
+                self.write_log("Already followed before " + self.media_by_location[0]["owner"]["id"])
+                self.next_iteration["Follow"] = time.time() + \
+                                                self.add_time(self.follow_delay/2)
+                return
+            log_string = "LOC Trying to follow: %s" % (
+                self.media_by_location[0]["owner"]["id"])
             self.write_log(log_string)
 
             if self.follow(self.media_by_tag[0]['node']["owner"]["id"]) != False:
@@ -935,6 +960,15 @@ class InstaBot:
             log_string = "Trying to comment: %s" % (self.media_by_tag[0]['node']['id'])
             self.write_log(log_string)
             if self.comment(self.media_by_tag[0]['node']['id'], comment_text) != False:
+                self.next_iteration["Comments"] = time.time() + \
+                                                  self.add_time(self.comments_delay)
+        if time.time() > self.next_iteration["Comments"] and self.comments_per_day != 0 \
+                and len(self.media_by_location) > 0 \
+                and self.check_exisiting_comment(self.media_by_location[0]['shortcode']) == False:
+            comment_text = self.generate_comment()
+            log_string = "Trying to comment: %s" % (self.media_by_location[0]['id'])
+            self.write_log(log_string)
+            if self.comment(self.media_by_location[0]['id'], comment_text) != False:
                 self.next_iteration["Comments"] = time.time() + \
                                                   self.add_time(self.comments_delay)
 
