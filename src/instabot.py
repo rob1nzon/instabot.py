@@ -356,7 +356,7 @@ class InstaBot:
             self.write_log(log_string)
             if self.login_status == 1:
                 url_tag = self.url_location % (location)
-                print(url_tag)
+                #print(url_tag)
                 try:
                     r = self.s.get(url_tag)
                     all_data = json.loads(r.text)
@@ -372,7 +372,7 @@ class InstaBot:
 
     def get_media_id_by_tag(self, tag):
         """ Get media ID set, by your hashtag """
-        print(tag)
+        #print(tag)
         if self.login_status:
             log_string = "Get media id by tag: %s" % (tag)
             self.write_log(log_string)
@@ -500,7 +500,7 @@ class InstaBot:
                                 if (len(self.media_by_location[i]['caption']) > 1):
                                     caption = self.media_by_location[i]['caption'].encode('ascii', errors='ignore')
                                     tag_blacklist = set(self.tag_blacklist)
-                                    print(caption)
+                                    #print(caption)
                                     if sys.version_info[0] == 3:
                                         tags = {
                                             str.lower(
@@ -517,7 +517,7 @@ class InstaBot:
                                             if (tag.decode('ASCII')
                                                 ).startswith("#")
                                         }
-                                    print(list(tags))
+                                    #print(list(tags))
                                     if tags.intersection(tag_blacklist):
                                         matching_tags = ', '.join(
                                             tags.intersection(tag_blacklist))
@@ -832,14 +832,14 @@ class InstaBot:
             ):
                 # ------------------- Get media_id -------------------
                 if len(self.media_by_tag) == 0:
-                    print('0')
+                    #print('0')
                     self.get_media_id_by_tag(random.choice(self.tag_list))
                     self.this_tag_like_count = 0
                     self.max_tag_like_count = random.randint(
                         1, self.max_like_for_one_tag)
                     self.remove_already_liked()
                 if len(self.media_by_location) == 0:
-                    print('1')
+                    #print('1')
                     self.get_media_id_by_location(random.choice(self.location_list))
                     self.this_tag_like_count = 0
                     self.max_tag_like_count = random.randint(
@@ -854,12 +854,12 @@ class InstaBot:
                 # ------------------- Comment -------------------
                 self.new_auto_mod_comments()
                 # Bot iteration in 1 sec
-                time.sleep(3)
-                print("Tic!")
+                time.sleep(100)
+                #print("Tic!")
             else:
                 print("sleeping until {hour}:{min}".format(hour=self.start_at_h,
                                                            min=self.start_at_m), end="\r")
-                time.sleep(10)
+                time.sleep(300)
 
     def remove_already_liked(self):
         self.write_log("Removing already liked medias..")
@@ -964,9 +964,9 @@ class InstaBot:
                                                   self.add_time(self.comments_delay)
         if time.time() > self.next_iteration["Comments"] and self.comments_per_day != 0 \
                 and len(self.media_by_location) > 0 \
-                and self.check_exisiting_comment(self.media_by_location[0]['shortcode']) == False:
+                and self.check_exisiting_comment(self.media_by_location[0]['code']) == False:
             comment_text = self.generate_comment()
-            log_string = "Trying to comment: %s" % (self.media_by_location[0]['id'])
+            log_string = "LOC Trying to comment: %s" % (self.media_by_location[0]['id'])
             self.write_log(log_string)
             if self.comment(self.media_by_location[0]['id'], comment_text) != False:
                 self.next_iteration["Comments"] = time.time() + \
